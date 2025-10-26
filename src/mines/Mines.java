@@ -18,7 +18,7 @@ public class Mines extends JFrame {
     public Mines() {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(WIDTH, HEIGHT);
+        setSize(ImageObserver.WIDTH, ImageObserver.HEIGHT);
         setLocationRelativeTo(null);
         setTitle("Minesweeper");
 
