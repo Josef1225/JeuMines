@@ -60,37 +60,39 @@ public class Board extends JPanel {
         allCells = rows * cols;
         field = new int[allCells];
 
-        for (int i = 0; i < allCells; i++) {
-            field[i] = COVER_FOR_CELL;
-        }
+        for (int i = 0; i < allCells; i++) field[i] = COVER_FOR_CELL;
 
         statusbar.setText(Integer.toString(minesLeft));
 
         int i = 0;
         while (i < mines) {
-            int position = (int) (allCells * random.nextDouble());
+            int pos = (int)(allCells * random.nextDouble());
+            if (placeMineAt(pos)) i++;
+        }
+    }
 
-            if (position < allCells && field[position] != COVERED_MINE_CELL) {
-                field[position] = COVERED_MINE_CELL;
-                i++;
+    private boolean placeMineAt(int position) {
+        if (position >= allCells || field[position] == COVERED_MINE_CELL) return false;
 
-                // Update neighboring cells
-                for (int r = -1; r <= 1; r++) {
-                    for (int c = -1; c <= 1; c++) {
-                        if (r == 0 && c == 0) continue;
-                        int cell = position + r * cols + c;
-                        int cellCol = cell % cols;
+        field[position] = COVERED_MINE_CELL;
+        incrementNeighbors(position);
+        return true;
+    }
 
-                        if (cell >= 0 && cell < allCells &&
-                            cellCol >= 0 && cellCol < cols &&
-                            field[cell] != COVERED_MINE_CELL) {
-                            field[cell] += 1;
-                        }
-                    }
+    private void incrementNeighbors(int position) {
+        for (int r=-1; r<=1; r++) {
+            for (int c=-1; c<=1; c++) {
+                if (r==0 && c==0) continue;
+                int cell = position + r * cols + c;
+                int cellCol = cell % cols;
+                if (cell >=0 && cell < allCells && cellCol>=0 && cellCol<cols &&
+                    field[cell] != COVERED_MINE_CELL) {
+                    field[cell] += 1;
                 }
             }
         }
     }
+
 
     public void findEmptyCells(int j) {
         for (int r = -1; r <= 1; r++) {
@@ -116,33 +118,13 @@ public class Board extends JPanel {
     public void paint(Graphics g) {
         int uncover = 0;
 
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                int cell = field[(i * cols) + j];
-
-                if (inGame && cell == MINE_CELL)
-                    inGame = false;
-
-                if (!inGame) {
-                    if (cell == COVERED_MINE_CELL) {
-                        cell = DRAW_MINE;
-                    } else if (cell == MARKED_MINE_CELL) {
-                        cell = DRAW_MARK;
-                    } else if (cell > COVERED_MINE_CELL) {
-                        cell = DRAW_WRONG_MARK;
-                    } else if (cell > MINE_CELL) {
-                        cell = DRAW_COVER;
-                    }
-                } else {
-                    if (cell > COVERED_MINE_CELL) {
-                        cell = DRAW_MARK;
-                    } else if (cell > MINE_CELL) {
-                        cell = DRAW_COVER;
-                        uncover++;
-                    }
-                }
-
-                g.drawImage(img[cell], j * CELL_SIZE, i * CELL_SIZE, this);
+        for (int i=0; i<rows; i++) {
+            for (int j=0; j<cols; j++) {
+                int idx = i*cols+j;
+                int cell = field[idx];
+                cell = getCellImageIndex(cell);
+                if (cell == DRAW_COVER) uncover++;
+                g.drawImage(img[cell], j*CELL_SIZE, i*CELL_SIZE, this);
             }
         }
 
@@ -153,6 +135,20 @@ public class Board extends JPanel {
             statusbar.setText("Game lost");
         }
     }
+
+    private int getCellImageIndex(int cell) {
+        if (!inGame) {
+            if (cell == COVERED_MINE_CELL) return DRAW_MINE;
+            if (cell == MARKED_MINE_CELL) return DRAW_MARK;
+            if (cell > COVERED_MINE_CELL) return DRAW_WRONG_MARK;
+            if (cell > MINE_CELL) return DRAW_COVER;
+        } else {
+            if (cell > COVERED_MINE_CELL) return DRAW_MARK;
+            if (cell > MINE_CELL) return DRAW_COVER;
+        }
+        return cell;
+    }
+
 
     class MinesAdapter extends MouseAdapter {
         @Override
